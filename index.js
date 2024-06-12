@@ -41,6 +41,8 @@ app.get('/', (req, res) => {
   res.send('Aplikasi Berjalan');
 });
 
-app.listen(process.env.APP_PORT, () => {
-  console.log('Server Up and Running on port', process.env.APP_PORT);
+const PORT = process.env.PORT || 8080;  // Use PORT from environment variables, or default to 8080
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server Up and Running on port ${PORT}`);
 });
