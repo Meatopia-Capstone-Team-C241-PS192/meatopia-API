@@ -1,0 +1,33 @@
+{
+  "name": "meatopia-api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/firestore": "^7.8.0",
+    "@google-cloud/storage": "^7.11.1",
+    "@tensorflow/tfjs-node": "^4.14.0",
+    "argon2": "^0.40.3",
+    "connect-firestore": "^0.1.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-fileupload": "^1.5.0",
+    "express-session": "^1.18.0",
+    "jsonwebtoken": "^9.0.2",
+    "moment-timezone": "^0.5.45",
+    "uuid": "^10.0.0"
+  },
+  "description": "",
+  "devDependencies": {
+    "nodemon": "^3.1.3"
+  }
+}
