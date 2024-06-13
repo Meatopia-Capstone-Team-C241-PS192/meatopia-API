@@ -4,8 +4,7 @@ import {
   getUserById,
   createUser,
   updateUser,
-  deleteUser,
-  uploadProfilePicture
+  deleteUser
 } from '../controllers/UserController.js';
 import { verifyUser, adminOnly } from '../middleware/AuthUser.js';
 
@@ -14,8 +13,7 @@ const router = express.Router();
 router.get('/users', verifyUser, adminOnly, getUsers);
 router.get('/users/:id', verifyUser, adminOnly, getUserById);
 router.post('/users', createUser);
-router.patch('/users/:id', verifyUser, updateUser);
+router.patch('/users/:id', verifyUser, adminOnly, updateUser);
 router.delete('/users/:id', verifyUser, adminOnly, deleteUser);
-router.post('/users/profile-picture', verifyUser, uploadProfilePicture);
 
 export default router;
