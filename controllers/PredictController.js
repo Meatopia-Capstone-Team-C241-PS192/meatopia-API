@@ -12,6 +12,7 @@ class PredictController {
                 throw new ClientError('File gambar harus disertakan');
             }
 
+            console.log('File name:', req.files.image.name);
             const id = uuidv4(); // Generate random ID
             const createdAt = new Date().toISOString();
             const model = await loadModel();
