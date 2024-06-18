@@ -11,6 +11,7 @@ import OrderRoute from './routes/OrderRoute.js';
 import PredictRoute from './routes/PredictRoute.js';
 import FirestoreStore from './middleware/FirestoreStore.js';
 
+
 dotenv.config();
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(cors());
 app.use(express.json());
 app.use(FileUpload());
 app.use(express.static('public'));
+
 
 app.use(MeatRoute);
 app.use(UserRoute);

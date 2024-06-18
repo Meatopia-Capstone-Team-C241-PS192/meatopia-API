@@ -2,6 +2,7 @@ import Users from '../models/UserModel.js';
 import argon2 from 'argon2';
 import path from 'path';
 import { profilePictureBucket } from '../config/Storage.js';
+import jwt from 'jsonwebtoken';
 
 // Fungsi untuk login
 export const Login = async (req, res) => {
@@ -19,9 +20,12 @@ export const Login = async (req, res) => {
     const match = await argon2.verify(user.password, password);
     if (!match) return res.status(400).json({ msg: 'Wrong Password' });
 
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    req.session.token = token; // Simpan token dalam session
     req.session.userId = user.id;
+
     const { id, name, role } = user;
-    res.status(200).json({ id, name, email, role });
+    res.status(200).json({ id, name, email, role, token });
   } catch (error) {
     res.status(500).json({ msg: error.message });
   }

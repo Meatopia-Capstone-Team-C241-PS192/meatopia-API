@@ -1,12 +1,14 @@
 import express from "express";
 import { deleteMeat, getMeatById, getMeats, saveMeat, updateMeat } from "../controllers/MeatController.js";
+import { verifyUser, adminOnly } from '../middleware/AuthUser.js';
+import { authenticateJWT } from '../middleware/AuthenticateJWT.js'; // Middleware baru untuk JWT
 
-const router = express.Router()
+const router = express.Router();
 
-router.get('/meats', getMeats)
-router.get('/meats/:id', getMeatById)
-router.post('/meats', saveMeat)
-router.patch('/meats/:id', updateMeat)
-router.delete('/meats/:id', deleteMeat)
+router.get('/meats', getMeats);
+router.get('/meats/:id', getMeatById);
+router.post('/meats', verifyUser, adminOnly, authenticateJWT, saveMeat);
+router.patch('/meats/:id', verifyUser, adminOnly, authenticateJWT, updateMeat);
+router.delete('/meats/:id', verifyUser, adminOnly, authenticateJWT, deleteMeat);
 
-export default router
+export default router;

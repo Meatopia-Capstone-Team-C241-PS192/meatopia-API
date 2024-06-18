@@ -20,7 +20,7 @@ class PredictController {
             // Resize image to the expected shape [100, 100]
             const resizedImageBuffer = await sharp(imageBuffer)
                 .resize(100, 100)
-                .toFormat('png')
+                .toFormat('jpg')
                 .toBuffer();
 
             // Log the size and shape of resized image buffer
@@ -70,3 +70,6 @@ class PredictController {
 }
 
 export default PredictController;
+
+
+
