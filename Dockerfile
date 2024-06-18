@@ -1,5 +1,5 @@
 # Menggunakan image Node.js resmi
-FROM node:16
+FROM node:20
 
 # Menyalin file aplikasi ke dalam image
 WORKDIR /usr/src/app
