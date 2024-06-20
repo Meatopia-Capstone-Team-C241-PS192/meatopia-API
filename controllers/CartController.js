@@ -115,7 +115,7 @@ export const clearCart = async (req, res) => {
 };
 
 export const checkoutCart = async (req, res) => {
-  const { userId, shippingAddress } = req.body;
+  const { userId, shippingAddress, meatIds } = req.body;
 
   try {
     const cart = await Cart.findByUserId(userId);
@@ -123,14 +123,21 @@ export const checkoutCart = async (req, res) => {
       return res.status(404).json({ msg: 'Cart is empty' });
     }
 
-    const items = cart.items;
+    // Filter items based on the provided meatIds
+    const items = cart.items.filter(item => meatIds.includes(item.meatId));
+    if (items.length === 0) {
+      return res.status(404).json({ msg: 'No items found in cart for the provided meat IDs' });
+    }
+
     const totalPrice = items.reduce((sum, item) => sum + item.totalPrice, 0);
     const orderDate = moment().tz("Asia/Jakarta").format();
     const deliveryDate = moment(orderDate).add(1, 'hour').tz("Asia/Jakarta").format();
 
     const order = await Order.create({ userId, items, totalPrice, shippingAddress, status: 'delivering', orderDate, deliveryDate });
 
-    await Cart.clearCart(userId);
+    // Remove checked out items from the cart
+    cart.items = cart.items.filter(item => !meatIds.includes(item.meatId));
+    await Cart.update(cart.id, { items: cart.items });
 
     res.status(201).json(order);
   } catch (error) {
