@@ -39,6 +39,18 @@ class Meat {
   static async delete(id) {
     await db.collection('meats').doc(id).delete();
   }
+
+  static async findByName(name) {
+    const meats = [];
+    const snapshot = await db.collection('meats').get();
+    snapshot.forEach((doc) => {
+      const meatData = doc.data();
+      if (meatData.name.toLowerCase().includes(name)) {
+        meats.push({ id: doc.id, ...meatData });
+      }
+    });
+    return meats;
+  }
 }
 
 export default Meat;

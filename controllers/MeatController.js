@@ -107,3 +107,17 @@ export const deleteMeat = async (req, res) => {
     console.log(error.message);
   }
 };
+
+export const getMeatByName = async (req, res) => {
+  try {
+    const name = req.params.name.toLowerCase();
+    const response = await Meat.findByName(name);
+    if (response.length === 0) {
+      return res.status(404).json({ msg: 'No meat found with the given name' });
+    }
+    res.json(response);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ msg: error.message });
+  }
+};
