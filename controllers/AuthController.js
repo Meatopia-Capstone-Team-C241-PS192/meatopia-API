@@ -1,8 +1,8 @@
 import Users from '../models/UserModel.js';
 import argon2 from 'argon2';
+import jwt from 'jsonwebtoken';
 import path from 'path';
 import { profilePictureBucket } from '../config/Storage.js';
-import jwt from 'jsonwebtoken';
 
 // Fungsi untuk login
 export const Login = async (req, res) => {
@@ -21,8 +21,6 @@ export const Login = async (req, res) => {
     if (!match) return res.status(400).json({ msg: 'Wrong Password' });
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    req.session.token = token; // Simpan token dalam session
-    req.session.userId = user.id;
 
     const { id, name, role } = user;
     res.status(200).json({ id, name, email, role, token });
@@ -33,90 +31,108 @@ export const Login = async (req, res) => {
 
 // Fungsi untuk mendapatkan data diri pengguna yang sedang login
 export const Me = async (req, res) => {
-  if (!req.session.userId) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
     return res.status(401).json({ msg: 'Mohon login ke akun anda' });
   }
-  const user = await Users.findById(req.session.userId);
-  if (!user) return res.status(404).json({ msg: 'User tidak ditemukan' });
-  res.status(200).json(user);
+  const token = authHeader.split(' ')[1];
+
+  jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+    const loggedInUser = await Users.findById(user.id);
+    if (!loggedInUser) return res.status(404).json({ msg: 'User tidak ditemukan' });
+    res.status(200).json(loggedInUser);
+  });
 };
 
 // Fungsi untuk logout
 export const Logout = (req, res) => {
-  req.session.destroy((err) => {
-    if (err) return res.status(400).json({ msg: 'Tidak dapat logout' });
-    res.status(200).json({ msg: 'Anda telah logout' });
-  });
+  // Logout hanya dengan menghapus token di client-side
+  res.status(200).json({ msg: 'Anda telah logout' });
 };
 
 // Fungsi untuk memperbarui profil pengguna
 export const updateProfile = async (req, res) => {
-  const user = await Users.findById(req.session.userId);
-  if (!user) return res.status(404).json({ msg: 'User tidak ditemukan' });
-
-  const { name, email, phone, address, password, confPassword } = req.body;
-  let hashPassword;
-  if (!password) {
-    hashPassword = user.password;
-  } else {
-    hashPassword = await argon2.hash(password);
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ msg: 'Mohon login ke akun anda' });
   }
-  if (password !== confPassword) return res.status(400).json({ msg: 'Password dan Confirm password tidak cocok' });
+  const token = authHeader.split(' ')[1];
 
-  let profileImageUrl = user.profileImageUrl;
-  if (req.files && req.files.file) {
-    const file = req.files.file;
-    const ext = path.extname(file.name);
-    const allowedTypes = ['.png', '.jpg', '.jpeg'];
-
-    if (!allowedTypes.includes(ext.toLowerCase())) {
-      return res.status(422).json({ msg: 'Invalid image format' });
+  jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+    if (err) {
+      return res.sendStatus(403);
     }
 
-    if (file.size > 5000000) { // Batasan ukuran file 5MB
-      return res.status(422).json({ msg: 'Image must be less than 5MB' });
+    const loggedInUser = await Users.findById(user.id);
+    if (!loggedInUser) return res.status(404).json({ msg: 'User tidak ditemukan' });
+
+    const { name, email, phone, address, password, confPassword } = req.body;
+    let hashPassword;
+    if (!password) {
+      hashPassword = loggedInUser.password;
+    } else {
+      hashPassword = await argon2.hash(password);
     }
+    if (password !== confPassword) return res.status(400).json({ msg: 'Password dan Confirm password tidak cocok' });
 
-    const fileName = `${file.md5}${ext}`;
-    const blob = profilePictureBucket.file(fileName);
-    const blobStream = blob.createWriteStream({
-      resumable: false
-    });
+    let profileImageUrl = loggedInUser.profileImageUrl;
+    if (req.files && req.files.file) {
+      const file = req.files.file;
+      const ext = path.extname(file.name);
+      const allowedTypes = ['.png', '.jpg', '.jpeg'];
 
-    blobStream.on('error', (err) => {
-      res.status(500).json({ msg: err.message });
-    });
+      if (!allowedTypes.includes(ext.toLowerCase())) {
+        return res.status(422).json({ msg: 'Invalid image format' });
+      }
 
-    blobStream.on('finish', async () => {
-      profileImageUrl = `https://storage.googleapis.com/${profilePictureBucket.name}/${fileName}`;
+      if (file.size > 5000000) { // Batasan ukuran file 5MB
+        return res.status(422).json({ msg: 'Image must be less than 5MB' });
+      }
+
+      const fileName = `${file.md5}${ext}`;
+      const blob = profilePictureBucket.file(fileName);
+      const blobStream = blob.createWriteStream({
+        resumable: false
+      });
+
+      blobStream.on('error', (err) => {
+        res.status(500).json({ msg: err.message });
+      });
+
+      blobStream.on('finish', async () => {
+        profileImageUrl = `https://storage.googleapis.com/${profilePictureBucket.name}/${fileName}`;
+        try {
+          await Users.update(loggedInUser.id, {
+            name,
+            email,
+            phone,
+            address,
+            password: hashPassword,
+            profileImageUrl
+          });
+          res.status(200).json({ msg: 'Update Berhasil', profileImageUrl });
+        } catch (error) {
+          res.status(400).json({ msg: error.message });
+        }
+      });
+
+      blobStream.end(file.data);
+    } else {
       try {
-        await Users.update(user.id, {
+        await Users.update(loggedInUser.id, {
           name,
           email,
           phone,
           address,
-          password: hashPassword,
-          profileImageUrl
+          password: hashPassword
         });
         res.status(200).json({ msg: 'Update Berhasil', profileImageUrl });
       } catch (error) {
         res.status(400).json({ msg: error.message });
       }
-    });
-
-    blobStream.end(file.data);
-  } else {
-    try {
-      await Users.update(user.id, {
-        name,
-        email,
-        phone,
-        address,
-        password: hashPassword
-      });
-      res.status(200).json({ msg: 'Update Berhasil', profileImageUrl });
-    } catch (error) {
-      res.status(400).json({ msg: error.message });
     }
-  }
+  });
 };

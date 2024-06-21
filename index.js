@@ -1,7 +1,7 @@
 import express from 'express';
 import FileUpload from 'express-fileupload';
 import cors from 'cors';
-import session from 'express-session';
+// import session from 'express-session';
 import MeatRoute from './routes/MeatRoute.js';
 import dotenv from 'dotenv';
 import UserRoute from './routes/UserRoute.js';
@@ -9,22 +9,22 @@ import AuthRoute from './routes/AuthRoute.js';
 import CartRoute from './routes/CartRoute.js';
 import OrderRoute from './routes/OrderRoute.js';
 import PredictRoute from './routes/PredictRoute.js';
-import FirestoreStore from './middleware/FirestoreStore.js';
+// import FirestoreStore from './middleware/FirestoreStore.js';
 
 
 dotenv.config();
 
 const app = express();
 
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  store: new FirestoreStore(),
-  cookie: {
-    secure: 'auto'
-  }
-}));
+// app.use(session({
+//   secret: process.env.SESSION_SECRET,
+//   resave: false,
+//   saveUninitialized: true,
+//   store: new FirestoreStore(),
+//   cookie: {
+//     secure: 'auto'
+//   }
+// }));
 
 app.use(cors());
 app.use(express.json());
